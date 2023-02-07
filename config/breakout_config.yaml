@@ -1,0 +1,129 @@
+device: cuda
+train_v:
+  batch_size: 128
+  train_epochs: 150
+  loss:
+    - bceloss
+    - regularizationloss
+  optim:
+    name: adam
+    learning_rate: 0.001
+    others:
+  lr_scheduler:
+    name: steplr
+    others:
+      step_size: 50
+      gamma: 0.1
+  alpha: 0.1
+  model_path: ./pretrained
+  progress_path: ./train_progress
+  plot_epochs: 10
+train:
+  batch_size: 64
+  train_epochs: 1000
+  loss:
+    - mseloss
+  optim:
+    name: adam
+    learning_rate: 0.0001
+    others: 
+  max_eps: 0.9
+  min_eps: 0.1
+  eps_decay: 500
+  discount_factor: 0.999
+  target_update_period: 100
+  target_update_ratio: 0.01
+  memory_length: 10000
+  model_path: ./pretrained
+  progress_path: ./train_progress
+  plot_epochs: 50
+model:
+  architecture:
+    v_model:
+      encoder:
+        conv:
+          - Conv2d:
+              args: [3, 32]
+              kernel_size: 4
+              stride: 2
+          - BatchNorm2d:
+              args: [32]
+          - ReLU:
+          - Conv2d:
+              args: [32, 64]
+              kernel_size: 4
+              stride: 2
+          - BatchNorm2d:
+              args: [64]
+          - ReLU:
+          - Conv2d:
+              args: [64, 128]
+              kernel_size: 4
+              stride: 2
+          - BatchNorm2d:
+              args: [128]
+          - ReLU:
+          - Conv2d:
+              args: [128, 256]
+              kernel_size: 4
+              stride: 2
+          - BatchNorm2d:
+              args: [256]
+          - ReLU:
+          - Flatten:
+        mean:
+          - Linear:
+              args: [1024, 32]
+        log_var:
+          - Linear:
+              args: [1024, 32]
+      decoder:
+        - Linear:
+            args: [32, 1024]
+        - Unflatten:
+            args: [1]
+            unflattened_size : [1024, 1, 1]
+        - ConvTranspose2d:
+            args: [1024, 128]
+            kernel_size: 5
+            stride: 1
+        - BatchNorm2d:
+            args: [128]
+        - ReLU:
+        - ConvTranspose2d:
+            args: [128, 64]
+            kernel_size: 5
+            stride: 2
+        - BatchNorm2d:
+            args: [64]
+        - ReLU:
+        - ConvTranspose2d:
+            args: [64, 32]
+            kernel_size: 6
+            stride: 2
+        - BatchNorm2d:
+            args: [32]
+        - ReLU:
+        - ConvTranspose2d:
+            args: [32, 3]
+            kernel_size: 6
+            stride: 2
+        - Sigmoid:
+    c_model:
+      - Linear:
+          args: [32, 128]
+      - ReLU:
+      - Linear:
+          args: [128, 32]
+      - ReLU:
+      - Linear:
+          args: [32, 4]
+
+env:
+  name: Breakout
+  action_space: 4
+test:
+  video_path: ./video/breakout_150.mp4
+data:
+  data_path: ./data
+  sample_size: 10000
